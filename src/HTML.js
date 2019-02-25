@@ -147,7 +147,7 @@ export default class HTML extends PureComponent {
                     console.log('RNElements from render-html', RNElements);
                 }
             }),
-            { decodeEntities: decodeEntities }
+            { decodeEntities: decodeEntities, recognizeSelfClosing: true }
         );
         parser.write(dom);
         parser.done();
