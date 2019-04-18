@@ -9,8 +9,8 @@ import {
     IGNORED_TAGS,
     TEXT_TAGS_IGNORING_ASSOCIATION,
     STYLESETS,
-    TextOnlyPropTypes
-} from './HTMLUtils';
+    TextOnlyPropTypes, TEXT_TAGS_MUST_INLINE
+} from './HTMLUtils'
 import { generateDefaultBlockStyles, generateDefaultTextStyles } from './HTMLDefaultStyles';
 import htmlparser2 from 'htmlparser2';
 import * as HTMLRenderers from './HTMLRenderers';
@@ -226,7 +226,38 @@ export default class HTML extends PureComponent {
                     };
                 }
             }
+
+            //Fixed multiple Emoji can not be inline while got img tag
+            if (child.wrapper === 'Text' && TEXT_TAGS_MUST_INLINE.indexOf(child.tagName) !== -1
+              && children.length > 1) {
+                // Texts outside <p> or not <p> themselves (with siblings)
+                let wrappedTexts = [];
+                for (let j = i; j < children.length; j++) {
+                    // Loop on its next siblings and store them in an array
+                    // until we encounter a block or a <p>
+                    let nextSibling = children[j];
+                    if (nextSibling.wrapper !== 'Text' || (TEXT_TAGS_MUST_INLINE.indexOf(nextSibling.tagName) === -1)) {
+                        break;
+                    }
+                    wrappedTexts.push(nextSibling);
+                    // Remove the child that has been nested
+                    children[j] = false;
+                }
+                // Replace the raw text with a <p> that has wrappedTexts as its children
+                if (wrappedTexts.length) {
+                    children[i] = {
+                        attribs: {},
+                        children: wrappedTexts,
+                        nodeIndex: i,
+                        parent: child.parent,
+                        parentTag: child.parentTag,
+                        tagName: 'textwrapper',
+                        wrapper: 'Text'
+                    };
+                }
+            }
         }
+
         return children.filter((parsedNode) => parsedNode !== false && parsedNode !== undefined);
     }
 
@@ -383,6 +414,7 @@ export default class HTML extends PureComponent {
      */
     renderRNElements (RNElements, parentWrapper = 'root', parentIndex = 0, props = this.props) {
         const { tagsStyles, classesStyles, emSize, ptSize, ignoredStyles, allowedStyles, baseFontStyle } = props;
+
         return RNElements && RNElements.length ? RNElements.map((element, index) => {
             const { attribs, data, tagName, parentTag, children, nodeIndex, wrapper } = element;
             const Wrapper = wrapper === 'Text' ? Text : View;
