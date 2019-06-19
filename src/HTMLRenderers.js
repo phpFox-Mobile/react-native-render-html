@@ -81,7 +81,7 @@ export function ul (htmlAttribs, children, convertedCSSStyles, passProps = {}) {
         ];
 
         if (rawChild) {
-            if (rawChild.parentTag === 'ul') {
+            if (rawChild.parentTag === 'ul' && rawChild.tagName === 'li') {
                 prefix = listsPrefixesRenderers && listsPrefixesRenderers.ul ? listsPrefixesRenderers.ul(...rendererArgs) : (
                     <View style={{
                         marginRight: 10,
@@ -92,19 +92,28 @@ export function ul (htmlAttribs, children, convertedCSSStyles, passProps = {}) {
                         backgroundColor: 'black'
                     }} />
                 );
-            } else if (rawChild.parentTag === 'ol') {
+            } else if (rawChild.parentTag === 'ol' && rawChild.tagName === 'li') {
                 prefix = listsPrefixesRenderers && listsPrefixesRenderers.ol ? listsPrefixesRenderers.ol(...rendererArgs) : (
                     <Text style={{ marginRight: 5, fontSize: baseFontSize }}>{ index + 1 })</Text>
                 );
             }
         }
+
+        if (rawChild && rawChild.wrapper === 'Text'
+          && Array.isArray(rawChild.children)
+          && rawChild.children.every(x => !x.data) ) {
+            return null
+        }
+
         return (
-            <View key={`list-${nodeIndex}-${index}-${key}`} style={{ flexDirection: 'row', marginBottom: 10 }}>
-                { prefix }
-                <View style={{ flex: 1 }}>{ child }</View>
-            </View>
+          <View key={`list-${nodeIndex}-${index}-${key}`} style={{ flexDirection: 'row', marginBottom: 10 }}>
+              { prefix }
+              <View style={{ flex: 1 }}>{ child }</View>
+          </View>
         );
     });
+
+
     return (
         <View style={style} key={key}>
             { children }
