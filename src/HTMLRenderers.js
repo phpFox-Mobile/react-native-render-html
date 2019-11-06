@@ -67,51 +67,57 @@ export function ul (htmlAttribs, children, convertedCSSStyles, passProps = {}) {
     const { rawChildren, nodeIndex, key, baseFontStyle, listsPrefixesRenderers } = passProps;
     const baseFontSize = baseFontStyle.fontSize || 14;
 
-    children = children && children.map((child, index) => {
-        const rawChild = rawChildren[index];
-        let prefix = false;
-        const rendererArgs = [
-            htmlAttribs,
-            children,
-            convertedCSSStyles,
-            {
-                ...passProps,
-                index
+    children = children && children
+        .filter((child, index) => {
+            const rawChild = rawChildren[index];
+
+            if (rawChild && rawChild.wrapper === 'Text'
+              && Array.isArray(rawChild.children)
+              && rawChild.children.every(x => !x.data) ) {
+                return false
             }
-        ];
 
-        if (rawChild) {
-            if (rawChild.parentTag === 'ul' && rawChild.tagName === 'li') {
-                prefix = listsPrefixesRenderers && listsPrefixesRenderers.ul ? listsPrefixesRenderers.ul(...rendererArgs) : (
-                    <View style={{
-                        marginRight: 10,
-                        width: baseFontSize / 2.8,
-                        height: baseFontSize / 2.8,
-                        marginTop: baseFontSize / 2,
-                        borderRadius: baseFontSize / 2.8,
-                        backgroundColor: 'black'
-                    }} />
-                );
-            } else if (rawChild.parentTag === 'ol' && rawChild.tagName === 'li') {
-                prefix = listsPrefixesRenderers && listsPrefixesRenderers.ol ? listsPrefixesRenderers.ol(...rendererArgs) : (
-                    <Text style={{ marginRight: 5, fontSize: baseFontSize }}>{ index + 1 })</Text>
-                );
+            return true
+        })
+        .map((child, index) => {
+            const rawChild = rawChildren[index];
+            let prefix = false;
+            const rendererArgs = [
+                htmlAttribs,
+                children,
+                convertedCSSStyles,
+                {
+                    ...passProps,
+                    index
+                }
+            ];
+
+            if (rawChild) {
+                if (rawChild.parentTag === 'ul' && (rawChild.tagName === 'li' || rawChild.tagName === 'textwrapper')) {
+                    prefix = listsPrefixesRenderers && listsPrefixesRenderers.ul ? listsPrefixesRenderers.ul(...rendererArgs) : (
+                        <View style={{
+                            marginRight: 10,
+                            width: baseFontSize / 2.8,
+                            height: baseFontSize / 2.8,
+                            marginTop: baseFontSize / 2,
+                            borderRadius: baseFontSize / 2.8,
+                            backgroundColor: 'black'
+                        }} />
+                    );
+                } else if (rawChild.parentTag === 'ol' && (rawChild.tagName === 'li' || rawChild.tagName === 'textwrapper')) {
+                    prefix = listsPrefixesRenderers && listsPrefixesRenderers.ol ? listsPrefixesRenderers.ol(...rendererArgs) : (
+                        <Text style={{ marginRight: 5, fontSize: baseFontSize }}>{ index + 1 })</Text>
+                    );
+                }
             }
-        }
 
-        if (rawChild && rawChild.wrapper === 'Text'
-          && Array.isArray(rawChild.children)
-          && rawChild.children.every(x => !x.data) ) {
-            return null
-        }
-
-        return (
-          <View key={`list-${nodeIndex}-${index}-${key}`} style={{ flexDirection: 'row', marginBottom: 10 }}>
-              { prefix }
-              <View style={{ flex: 1 }}>{ child }</View>
-          </View>
-        );
-    });
+            return (
+              <View key={`list-${nodeIndex}-${index}-${key}`} style={{ flexDirection: 'row', marginBottom: 10 }}>
+                  { prefix }
+                  <View style={{ flex: 1 }}>{ child }</View>
+              </View>
+            );
+        });
 
 
     return (
